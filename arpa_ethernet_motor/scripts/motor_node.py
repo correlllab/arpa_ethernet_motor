@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from std_srvs.srv import Trigger
+from custom_ros_messages.srv import EthernetMotor
 import socket
 
 class MotorControlNode(Node):
@@ -14,20 +14,15 @@ class MotorControlNode(Node):
         self.port = 8888
         self.timeout = 1.0
         
-        # Create services
-        self.srv_on = self.create_service(
-            Trigger, 
-            'motor_on', 
-            self.motor_on_callback
-        )
-        self.srv_off = self.create_service(
-            Trigger, 
-            'motor_off', 
-            self.motor_off_callback
+        # Create service with custom message type
+        self.srv = self.create_service(
+            EthernetMotor, 
+            'motor_control', 
+            self.motor_control_callback
         )
         
         self.get_logger().info('Motor control node started')
-        self.get_logger().info(f'Services available: /motor_on, /motor_off')
+        self.get_logger().info(f'Service available: /motor_control')
         self.get_logger().info(f'Target: {self.host}:{self.port}')
     
     def send_motor_command(self, enable, speed):
@@ -43,6 +38,10 @@ class MotorControlNode(Node):
             message: Status message
         """
         try:
+            # Validate speed range
+            if not 0 <= speed <= 255:
+                return False, f"Invalid speed {speed}. Must be 0-255"
+            
             # Create UDP socket
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.settimeout(self.timeout)
@@ -54,7 +53,8 @@ class MotorControlNode(Node):
             sock.sendto(command, (self.host, self.port))
             sock.close()
             
-            return True, f"Command sent: enable={enable}, speed={speed}"
+            action = "ON" if enable else "OFF"
+            return True, f"Motor {action} at speed {speed}"
             
         except socket.timeout:
             return False, "Socket timeout - no response from motor controller"
@@ -63,35 +63,33 @@ class MotorControlNode(Node):
         except Exception as e:
             return False, f"Error: {str(e)}"
     
-    def motor_on_callback(self, request, response):
-        """Handle motor ON service request"""
-        self.get_logger().info('Turning motor ON at full speed')
+    def motor_control_callback(self, request, response):
+        """
+        Handle motor control service request
         
-        success, message = self.send_motor_command(enable=1, speed=255)
+        Args:
+            request.enable: True to turn ON, False to turn OFF
+            request.speed: Motor speed (0-255)
         
-        response.success = success
-        response.message = message
+        Returns:
+            response.success: True if successful
+            response.message: Status message
+        """
+        enable = 1 if request.enable and request.speed > 0 else 0
+        speed = request.speed
+        action = "ON" if request.enable else "OFF"
         
-        if success:
-            self.get_logger().info('Motor turned ON successfully')
-        else:
-            self.get_logger().error(f'Failed to turn motor ON: {message}')
+        self.get_logger().info(f'Request: Motor {action} at speed {speed}')
         
-        return response
-    
-    def motor_off_callback(self, request, response):
-        """Handle motor OFF service request"""
-        self.get_logger().info('Turning motor OFF')
-        
-        success, message = self.send_motor_command(enable=0, speed=255)
+        success, message = self.send_motor_command(enable, speed)
         
         response.success = success
         response.message = message
         
         if success:
-            self.get_logger().info('Motor turned OFF successfully')
+            self.get_logger().info(f'Success: {message}')
         else:
-            self.get_logger().error(f'Failed to turn motor OFF: {message}')
+            self.get_logger().error(f'Failed: {message}')
         
         return response
 
