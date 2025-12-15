@@ -1,0 +1,22 @@
+Output: Gerber Files
+Type  : Gerber
+From  : Variant [[No Variations]] of Project [EthernetMotorController v1.1.PrjPcb]
+   Generated File[EthernetMotorController.GTO]
+   Generated File[EthernetMotorController.GTP]
+   Generated File[EthernetMotorController.GTS]
+   Generated File[EthernetMotorController.GTL]
+   Generated File[EthernetMotorController.GBL]
+   Generated File[EthernetMotorController.GBS]
+   Generated File[EthernetMotorController.GBP]
+   Generated File[EthernetMotorController.GBO]
+   Generated File[EthernetMotorController.GD1]
+   Generated File[EthernetMotorController.GG1]
+   Generated File[EthernetMotorController.GM]
+   Generated File[EthernetMotorController.EXTREP]
+   Generated File[EthernetMotorController.REP]
+
+
+Files Generated   : 13
+Documents Printed : 0
+
+Finished Output Generation At 6:25:02 PM On 12/3/2025
