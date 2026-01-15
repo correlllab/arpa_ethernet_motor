@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'motor_node = arpa_ethernet_motor.scripts.motor_node:main',
+            'ee_motor_node = arpa_ethernet_motor.scripts.EE_motor_node:main',
+            'parker_motor_node = arpa_ethernet_motor.scripts.PARKER_motor_node:main'
         ],
     },
 )
