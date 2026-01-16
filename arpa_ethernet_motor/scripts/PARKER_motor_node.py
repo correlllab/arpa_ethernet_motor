@@ -17,7 +17,7 @@ from rclpy.executors import MultiThreadedExecutor
 from custom_ros_messages.srv import ParkerGetPoseTrigger
 from custom_ros_messages.action import ParkerGotoPose
 
-from PARKER_core import SocketTelnetClient
+from PARKER_core import SocketTelnetClient, MIN_POSITION_MM, MAX_POSITION_MM
 
 
 # -------------------------
@@ -79,7 +79,15 @@ class ParkerMotorNode(Node):
 
     def goal_callback(self, goal_request):
         """Accept or reject goal requests."""
-        self.get_logger().info(f'Received goal request: target={goal_request.target_position_mm} mm')
+        target = goal_request.target_position_mm
+
+        # Clip target to valid range if needed
+        if target < MIN_POSITION_MM or target > MAX_POSITION_MM:
+            clipped_target = max(MIN_POSITION_MM, min(target, MAX_POSITION_MM))
+            self.get_logger().warn(f'Goal target {target} mm is outside valid range [{MIN_POSITION_MM}, {MAX_POSITION_MM}], will be clipped to {clipped_target} mm')
+        else:
+            self.get_logger().info(f'Received goal request: target={target} mm')
+
         return GoalResponse.ACCEPT
 
     def cancel_callback(self, goal_handle):
@@ -96,6 +104,7 @@ class ParkerMotorNode(Node):
         check_interval = 1.0 / check_rate
         settling_time = 1.0  # seconds - must be stationary for this long
         position_tolerance = 0.5  # mm - acceptable error from target (increased for motor settling behavior)
+        max_movement_time = 10.0  # seconds - maximum time to wait for movement completion
 
         try:
             # Send goto command
@@ -107,9 +116,20 @@ class ParkerMotorNode(Node):
 
             # Track how long we've been stationary and close to goal
             stationary_start_time = None
+            movement_start_time = time.time()
 
             # Publish feedback while moving or settling
             while True:
+                # Check for timeout
+                elapsed_total = time.time() - movement_start_time
+                if elapsed_total > max_movement_time:
+                    goal_handle.abort()
+                    result = ParkerGotoPose.Result()
+                    result.success = False
+                    result.final_position_mm = self.client._last_position
+                    result.message = f'Movement timeout after {max_movement_time}s (target: {target_position:.4f}, current: {self.client._last_position:.4f})'
+                    self.get_logger().error(result.message)
+                    return result
                 if goal_handle.is_cancel_requested:
                     goal_handle.canceled()
                     result = ParkerGotoPose.Result()

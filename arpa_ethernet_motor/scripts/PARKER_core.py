@@ -16,6 +16,8 @@ MOVEMENT_THRESHOLD = 0.0001   # minimum change to consider as movement
 ENCODER_0_READING = -517891070
 ENCODER_PPU = 26214.4
 STATIONARY_THRESHOLD = 5  # Number of consecutive stationary readings
+MIN_POSITION_MM = 100.0  # Minimum valid position in mm
+MAX_POSITION_MM = 2000.0  # Maximum valid position in mm
 
 
 
@@ -98,7 +100,9 @@ class SocketTelnetClient:
         # print(f"[Init motor]{drive_response}")
 
     def goto_pose(self, user_units) -> list[str]:
-        target_user_units = self.zero_pose - float(user_units) 
+        user_units = float(user_units)
+        user_units = min(MAX_POSITION_MM, max(user_units, MIN_POSITION_MM))
+        target_user_units = self.zero_pose - user_units
         # print(f"Going to user units: f({float(user_units)}, {self.zero_pose})={float(target_user_units):.4f}")
 
         cmd = f"MOV X {target_user_units}"
