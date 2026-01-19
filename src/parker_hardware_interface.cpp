@@ -205,6 +205,4 @@ hardware_interface::return_type ParkerHardwareInterface::write(
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(
-  arpa_ethernet_motor::ParkerHardwareInterface,
-  hardware_interface::SystemInterface)
+PLUGINLIB_EXPORT_CLASS(arpa_ethernet_motor::ParkerHardwareInterface, hardware_interface::SystemInterface)
