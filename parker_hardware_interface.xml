@@ -1,0 +1,10 @@
+<library path="parker_hardware_interface">
+  <class name="arpa_ethernet_motor/ParkerHardwareInterface"
+         type="arpa_ethernet_motor::ParkerHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware interface for Parker Ethernet motor controller.
+      Provides position control for a single linear axis.
+    </description>
+  </class>
+</library>
