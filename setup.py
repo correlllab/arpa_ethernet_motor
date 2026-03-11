@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='max',
     maintainer_email='maxlconway@gmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Ethernet motor control and motor current ROS nodes',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',
@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'motor_node = arpa_ethernet_motor.scripts.motor_node:main',
+            'motor_current_node = arpa_ethernet_motor.motor_current_node:main',
         ],
     },
 )
