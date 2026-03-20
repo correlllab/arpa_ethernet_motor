@@ -3,7 +3,9 @@
 import rclpy
 from rclpy.node import Node
 from custom_ros_messages.srv import EthernetMotor
+from std_msgs.msg import Float32
 import socket
+import serial
 
 class MotorControlNode(Node):
     def __init__(self):
@@ -24,6 +26,68 @@ class MotorControlNode(Node):
         self.get_logger().info('Motor control node started')
         self.get_logger().info(f'Service available: /motor_control')
         self.get_logger().info(f'Target: {self.host}:{self.port}')
+
+
+        # self.declare_parameter('port', '/dev/ttyACM0')
+        # self.declare_parameter('baud', 115200)
+        # self.declare_parameter('topic', 'motor_current')
+
+        # port = self.get_parameter('port').value
+        # baud = int(self.get_parameter('baud').value)
+        # topic = self.get_parameter('topic').value
+
+        # self.declare_parameter('lowpass_alpha', 0.1)
+        # alpha = float(self.get_parameter('lowpass_alpha').value)
+        # self._lp_alpha = max(0.0, min(1.0, alpha))
+        # self._lp_value = None
+
+        # self.publisher_ = self.create_publisher(Float32, topic, 10)
+        # self.ser = None
+        # for port in ['/dev/ttyACM0', '/dev/ttyACM1']:
+        #     try:
+        #         self.ser = serial.Serial(port, baudrate=baud, timeout=0.05)
+        #         self.ser.reset_input_buffer()
+        #         self.get_logger().info(f'Opened {port} @ {baud}')
+        #         break
+        #     except serial.serialutil.SerialException as e:
+        #         self.get_logger().warn(f'Could not open {port}: {e}')
+        # if self.ser is None:
+        #     raise RuntimeError('No serial port found on /dev/ttyACM0 or /dev/ttyACM1')
+
+        # self.timer = self.create_timer(0.002, self.read_serial)
+        # self.pub_timer = self.create_timer(0.05, self.publish_current)
+
+    def read_serial(self):
+        try:
+            line = self.ser.readline().decode('utf-8', errors='ignore').strip()
+            if not line:
+                return
+
+            current = float(line)
+
+            if self._lp_value is None:
+                self._lp_value = current
+            else:
+                self._lp_value += self._lp_alpha * (current - self._lp_value)
+
+        except ValueError:
+            return
+        except serial.serialutil.SerialException as e:
+            self.get_logger().error(f'Serial error: {e}')
+
+    def publish_current(self):
+        if self._lp_value is None:
+            return
+        msg = Float32()
+        msg.data = self._lp_value
+        self.publisher_.publish(msg)
+
+    def destroy_node(self):
+        try:
+            if hasattr(self, 'ser') and self.ser.is_open:
+                self.ser.close()
+        finally:
+            super().destroy_node()
     
     def send_motor_command(self, enable, speed):
         """
