@@ -55,7 +55,7 @@ class MotorControlNode(Node):
         #     raise RuntimeError('No serial port found on /dev/ttyACM0 or /dev/ttyACM1')
 
         # self.timer = self.create_timer(0.002, self.read_serial)
-        # self.pub_timer = self.create_timer(0.05, self.publish_current)
+        # self.pub_timer = self.create_timer(0.02, self.publish_current)
 
     def read_serial(self):
         try:
